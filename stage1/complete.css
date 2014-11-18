@@ -18,9 +18,53 @@
 
 .grillLayer{
 	position: absolute;
-	background-color: RGBA(30,30,30,0.1);
-	
+	/*background-color: RGBA(30,30,30,0.1);
+*/
 	width:900px;
 	height: 900px;
 
+}
+
+.noMouse{
+	pointer-events:none;
+}
+
+.tileDiv{
+	position:absolute;
+	width: 0px;
+	height:0px;
+}
+
+.tileImg{
+
+	position:absolute;
+	width: 70px;
+	height: 62px;
+	left:-35px;
+	top:-31px;
+	
+}
+
+.character{
+	position:absolute;
+	width:42px;
+	height: 42px;
+	border-radius: 50%;
+	background-color: RGBA(230,190,40,0.7);
+}
+
+.charDiv{
+	position:absolute;
+	width:46px;
+	height:46px;
+	border-radius: 50%;
+	background-color: RGBA(230,110,120,0.9);
+}
+
+.charImg{
+	position:absolute;
+	width: 40px;
+	height: 48px;
+	left:2px;
+	top:-5px;
 }
