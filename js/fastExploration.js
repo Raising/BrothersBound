@@ -98,4 +98,17 @@ BB.ActorsHandler = function(numCharacters){
 	}
 	 
 
+Draggable.create(".charDiv", {
+		bounds:$("#Characters"),
+		edgeResistance:0.25,
+		type:"x,y",
+		throwProps:true,
+		
+		
+});
 }
+
+
+
+
+
