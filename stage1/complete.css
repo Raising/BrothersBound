@@ -1,0 +1,26 @@
+#gameArea {
+	perspective:2300px;
+}
+
+#grillVertical {
+	position:absolute;
+	left:100px;
+
+	width:900px;
+	height: 900px;
+}
+#grillHorizontal{
+	position:absolute;
+	left:150px;
+	width:900px;
+	height: 900px;
+}
+
+.grillLayer{
+	position: absolute;
+	background-color: RGBA(30,30,30,0.1);
+	
+	width:900px;
+	height: 900px;
+
+}
