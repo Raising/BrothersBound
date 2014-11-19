@@ -10,6 +10,8 @@ BB.Tile = function(type){
 	
 
 	this.htmlDiv.append(this.htmlImg);
+	this.characterVector = [];
+
 	var randcolor = Math.floor(Math.random()*3);
 	switch(randcolor){
 		case 0:
@@ -35,8 +37,17 @@ BB.Tile = function(type){
 	}
 
 	this.showOff = function(){
-		TweenMax.to(tile.htmlDiv.children(),0.5,{ boxShadow: "0px 0px 20px 10px rgba(0,255,0,0.7)" ,force3D:true });
+		TweenMax.to(tile.htmlDiv.children(),1,{ rotationZ:360,repeat:1 });
 	}
+
+	this.addCharacter = function(character){
+		tile.characterVector.push(character);
+	}
+
+	this.removeCharacter = function(character){
+		tile.characterVector.remove(character);
+	}
+
 
 }
 
@@ -59,9 +70,13 @@ BB.Grill = function(x,y){
 			}
 		}	
 	}
+	this.getInTile = function(x,y,character){
+		grill.tileMatrix[x][y].addCharacter(character);
+		return grill.tileMatrix[x][y];
+	}
 }
 
-BB.Character = function(type){
+BB.Character = function(type,map){
 
 	var character = this;
 	this.htmlDiv= $("<div class='charDiv'></div>");
@@ -70,23 +85,54 @@ BB.Character = function(type){
 	this.htmlImg.attr("src","../resources/character/swordGreen1.png");
 	this.x = 0;
 	this.y = 0;
+	this.weapon = new BB.Weapon("random");
+	this.currentTile = null;
+	this.map = map;
+
 	this.setPosition = function(x,y){
 		character.x=x;
 		character.y=y;
+		character.currentTile = character.map.getInTile(x,y,character);
 		TweenMax.to(character.htmlDiv,1,{x:77+(x*45)+"px",y:77+((y*50)+((x%2)*25))+"px",z:0 ,force3D:true });
 	}
 	this.getCharacter = function(){
 		return character.htmlDiv;
+ 	}
+	this.setDragable = function(){
+		Draggable.create(character.htmlDiv, {
+			bounds:$("#Characters"),
+			edgeResistance:0.25,
+			type:"x,y",
+			throwProps:true,
+			zIndexBoost:false,
+			onDrag:function() {
+	         var xTile = Math.round((this.x-77)/45);
+	         var yTile =  Math.round((this.y-77-((xTile%2)*25))/50);
+	         character.map.tileMatrix[xTile][yTile].showOff();
+	        },
+	        onDragEnd:function(){
+	         var xTile = Math.round((this.x-77)/45);
+	         var yTile =  Math.round((this.y-77-((xTile%2)*25))/50);
+	         TweenMax.to(character.htmlDiv,2,{x:xTile*45+77,y:yTile*50+(xTile%2)*25+77,ease:Expo.easeOut}); 	
+	         character.weapon.setArea(xTile,yTile);
+	        	character.weapon.putArea("Effects");	
+	        },
+	        onPress:function(){
+	        	 var xTile = Math.round((this.x-77)/45);
+	         	var yTile =  Math.round((this.y-77-((xTile%2)*25))/50);
+	        	character.weapon.setArea(xTile,yTile);
+	        	character.weapon.putArea("Effects");
+	        }
 
-	this.setOnclick = function(number){
-		character.htmlImg.click(function(){
-			console.log(number);
+
+
 		});
 	}
-}
+
+
 
 }
-BB.ActorsHandler = function(numCharacters){
+BB.ActorsHandler = function(numCharacters,map){
 
 	var actorsHandler = this;
 	this.targetDiv = $("#Characters");
@@ -94,30 +140,122 @@ BB.ActorsHandler = function(numCharacters){
 	this.leftOffset = 100;
 	this.charactersArray= new Array(numCharacters);
 	for (var j = 0; j<numCharacters;j++){
-		actorsHandler.charactersArray[j] = new BB.Character(0);
+		actorsHandler.charactersArray[j] = new BB.Character(0,map);
 		actorsHandler.charactersArray[j].setPosition(Math.floor(Math.random()*15),Math.floor(Math.random()*15));
-
+		actorsHandler.charactersArray[j].setDragable();
 		actorsHandler.targetDiv.append(actorsHandler.charactersArray[j].getCharacter());
 	}
 	 
 
-Draggable.create(".charDiv", {
-		bounds:$("#Characters"),
-		edgeResistance:0.25,
-		type:"x,y",
-		throwProps:true,
-		onDrag:function() {
-         
-         var xTile = Math.round((this.x-23)/45);
 
-         
+}
+BB.DangerZone = function(x,y,kind){
+	var dangerZone = this;
+	this.x = x;
+	this.y = y;
+	this.kind = kind;
+	this.icon= $("<img class='iconImg'></img>");
+	switch (kind){
+		case "sword":
+			this.icon.attr("src","../resources/effects/sword.png");
+		break;
+		case "spear":
+			this.icon.attr("src","../resources/effects/spear.png");
+		break;
+		default:
+		break;
+	}
+	this.setPosition = function(centerX,centerY){
+		var xTile = dangerZone.x+centerX;
+		var yTile = dangerZone.y+centerY+(centerX)%2*(Math.abs(xTile+1))%2;
+		TweenMax.to(dangerZone.icon,0.5,{x:xTile*45+80,y:yTile*50+(Math.abs(xTile)%2)*25+80});
+	}
 
-         var yTile =  Math.round((this.y-23-((xTile%2)*25))/50);
+	this.getIcon = function(){
+		return dangerZone.icon;
+	}
+}
 
-         bbMap.tileMatrix[xTile][yTile].showOff();
-        },
+BB.Weapon = function(kind){
 
-});
+	var weapon =this;
+	this.area = [];
+	if(kind === "random"){
+		var posiblities = ["espadaChustosa","dualKnife","lanza","pilum"];
+		kind = posiblities[Math.floor(Math.random()*posiblities.length)];
+	}
+	switch (kind){
+		case "espadaChustosa":
+			this.area.push(new BB.DangerZone(0,-1,"sword"));
+			this.area.push(new BB.DangerZone(0,1,"sword"));
+			this.area.push(new BB.DangerZone(-1,-1,"sword"));
+			this.area.push(new BB.DangerZone(-1,0,"sword"));
+			this.area.push(new BB.DangerZone(-2,0,"sword"));
+			this.area.push(new BB.DangerZone(1,-2,"sword"));
+			this.area.push(new BB.DangerZone(1,-1,"sword"));
+			this.area.push(new BB.DangerZone(1,0,"sword"));
+			this.area.push(new BB.DangerZone(1,1,"sword"));
+		break;
+		case "dualKnife":
+			this.area.push(new BB.DangerZone(0,-1,"sword"));
+			this.area.push(new BB.DangerZone(0,-2,"sword"));
+			this.area.push(new BB.DangerZone(1,-1,"sword"));
+			this.area.push(new BB.DangerZone(1,-2,"sword"));
+			this.area.push(new BB.DangerZone(2,-1,"sword"));
+			this.area.push(new BB.DangerZone(-1,0,"sword"));
+			this.area.push(new BB.DangerZone(0,1,"sword"));
+			this.area.push(new BB.DangerZone(0,2,"sword"));
+			this.area.push(new BB.DangerZone(-1,1,"sword"));
+			this.area.push(new BB.DangerZone(-2,1,"sword"));
+		break;
+		case "lanza":
+			this.area.push(new BB.DangerZone(0,-2,"spear"));
+			this.area.push(new BB.DangerZone(0,2,"spear"));
+			this.area.push(new BB.DangerZone(-2,-1,"spear"));
+			this.area.push(new BB.DangerZone(-2,0,"spear"));
+			this.area.push(new BB.DangerZone(-2,1,"spear"));
+			this.area.push(new BB.DangerZone(2,-1,"spear"));
+			this.area.push(new BB.DangerZone(1,-2,"spear"));
+			this.area.push(new BB.DangerZone(2,1,"spear"));
+			this.area.push(new BB.DangerZone(1,1,"spear"));
+		break;
+		case "pilum":
+			this.area.push(new BB.DangerZone(-3,0,"spear"));
+			this.area.push(new BB.DangerZone(-3,-1,"spear"));
+			this.area.push(new BB.DangerZone(-4,0,"spear"));
+			this.area.push(new BB.DangerZone(2,2,"spear"));
+			this.area.push(new BB.DangerZone(2,3,"spear"));
+			this.area.push(new BB.DangerZone(1,2,"spear"));
+			this.area.push(new BB.DangerZone(2,-2,"spear"));
+			this.area.push(new BB.DangerZone(2,-3,"spear"));
+			this.area.push(new BB.DangerZone(1,-3,"spear"));
+			
+		break;
+		default:
+		break;
+	}
+
+	this.getArea = function(){
+		return weapon.area;
+	}
+	this.putArea = function(elementoPadre){
+		for (var i = 0;i< weapon.area.length;i++){
+			$("#"+elementoPadre).append(weapon.area[i].getIcon());
+		 }
+	}
+
+	this.removeArea = function(elementoPadre){
+			for (var i = 0;i< weapon.area.length;i++){
+			$("#"+elementoPadre).remove(weapon.area[i].getIcon());
+		 }
+	}
+
+	this.setArea = function(x,y){
+		for (var i = 0;i< weapon.area.length;i++){
+			weapon.area[i].setPosition(x,y);
+		}
+	}
+
 }
 
 

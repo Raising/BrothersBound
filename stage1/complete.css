@@ -68,3 +68,10 @@
 	left:2px;
 	top:-5px;
 }
+
+.iconImg{
+	position:absolute;
+	width: 40px;
+	height: 40px;
+	opacity: 1;
+}
