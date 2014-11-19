@@ -27,13 +27,16 @@ BB.Tile = function(type){
 	this.setPosition = function(x,y,z){
 		//tile.htmlDiv.css({left:x,top:y});
 	//	tile.htmlDiv.css({transform:"translate3d("+x+","+y+","+z+")" }	);
-		TweenMax.to(tile.htmlDiv,1,{x:x,y:y,z:z ,force3D:true });
+		TweenMax.to(tile.htmlDiv,0,{x:x,y:y,z:z ,force3D:true });
 	}
 
 	this.getTile = function(){
 		return tile.htmlDiv;
 	}
 
+	this.showOff = function(){
+		TweenMax.to(tile.htmlDiv.children(),0.5,{ boxShadow: "0px 0px 20px 10px rgba(0,255,0,0.7)" ,force3D:true });
+	}
 
 }
 
@@ -103,8 +106,17 @@ Draggable.create(".charDiv", {
 		edgeResistance:0.25,
 		type:"x,y",
 		throwProps:true,
-		
-		
+		onDrag:function() {
+         
+         var xTile = Math.round((this.x-23)/45);
+
+         
+
+         var yTile =  Math.round((this.y-23-((xTile%2)*25))/50);
+
+         bbMap.tileMatrix[xTile][yTile].showOff();
+        },
+
 });
 }
 
