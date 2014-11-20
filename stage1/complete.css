@@ -44,6 +44,13 @@
 	top:-31px;
 	
 }
+.tileText{
+	position:absolute;
+	top:-8px;
+	left: -5px;
+	font-size: 14px;
+
+}
 
 .character{
 	position:absolute;
@@ -73,5 +80,5 @@
 	position:absolute;
 	width: 40px;
 	height: 40px;
-	opacity: 1;
+	opacity: 0.4;
 }

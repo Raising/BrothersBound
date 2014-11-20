@@ -7,10 +7,13 @@ BB.Tile = function(type){
 	var tile = this;
 	this.htmlDiv= $("<div class='tileDiv'></div>");
 	this.htmlImg = $("<img class='tileImg' ></img>");
+	this.htmlText = $("<span class='tileText' >5</span>");
 	
-
+	this.x = 0;
+	this.y = 0;
 	this.htmlDiv.append(this.htmlImg);
-	this.characterVector = [];
+	this.htmlDiv.append(this.htmlText);
+	this.characterHere = 0;
 
 	var randcolor = Math.floor(Math.random()*3);
 	switch(randcolor){
@@ -27,9 +30,11 @@ BB.Tile = function(type){
 	
 
 	this.setPosition = function(x,y,z){
-		//tile.htmlDiv.css({left:x,top:y});
-	//	tile.htmlDiv.css({transform:"translate3d("+x+","+y+","+z+")" }	);
-		TweenMax.to(tile.htmlDiv,0,{x:x,y:y,z:z ,force3D:true });
+		tile.x = x;
+		tile.y = y;
+
+
+		TweenMax.to(tile.htmlDiv,0,{x:100+(x*45)+"px",y:100+((y*50)+((x%2)*25))+"px",z:z ,force3D:true });
 	}
 
 	this.getTile = function(){
@@ -40,12 +45,16 @@ BB.Tile = function(type){
 		TweenMax.to(tile.htmlDiv.children(),1,{ rotationZ:360,repeat:1 });
 	}
 
-	this.addCharacter = function(character){
-		tile.characterVector.push(character);
+	this.setCharacter = function(character){
+		tile.characterHere = character;
 	}
 
-	this.removeCharacter = function(character){
-		tile.characterVector.remove(character);
+	this.removeCharacter = function(){
+		tile.characterHere = 0;
+	}
+
+	this.getCharacter = function(){
+		return tile.characterHere;
 	}
 
 
@@ -65,14 +74,19 @@ BB.Grill = function(x,y){
 			grill.tileMatrix[i] = new Array(y);
 			for (var j = 0; j<y;j++){
 				grill.tileMatrix[i][j] = new BB.Tile(0);
-				grill.tileMatrix[i][j].setPosition(grill.leftOffset+(i*45)+"px",grill.topOffset+((j*50)+((i%2)*25))+"px",0+"px");
+				grill.tileMatrix[i][j].setPosition(i,j,0);
 				grill.targetDiv.append(grill.tileMatrix[i][j].getTile());
 			}
 		}	
 	}
+
 	this.getInTile = function(x,y,character){
-		grill.tileMatrix[x][y].addCharacter(character);
+		console.log(x,y,character);
+		grill.tileMatrix[x][y].setCharacter(character);
 		return grill.tileMatrix[x][y];
+	}
+	this.getCharacterInTile = function(x,y){
+		return grill.tileMatrix[x][y].getCharacter();
 	}
 }
 
@@ -93,11 +107,17 @@ BB.Character = function(type,map){
 		character.x=x;
 		character.y=y;
 		character.currentTile = character.map.getInTile(x,y,character);
-		TweenMax.to(character.htmlDiv,1,{x:77+(x*45)+"px",y:77+((y*50)+((x%2)*25))+"px",z:0 ,force3D:true });
+		TweenMax.to(character.htmlDiv,0.2,{x:77+(x*45)+"px",y:77+((y*50)+((x%2)*25))+"px",z:0 ,force3D:true });
 	}
 	this.getCharacter = function(){
 		return character.htmlDiv;
  	}
+
+ 	this.showWeapon = function(){
+ 		character.weapon.setArea(character.x,character.y);
+ 		character.weapon.putArea("Effects");
+ 	}
+
 	this.setDragable = function(){
 		Draggable.create(character.htmlDiv, {
 			bounds:$("#Characters"),
@@ -108,30 +128,56 @@ BB.Character = function(type,map){
 			onDrag:function() {
 	         var xTile = Math.round((this.x-77)/45);
 	         var yTile =  Math.round((this.y-77-((xTile%2)*25))/50);
-	         character.map.tileMatrix[xTile][yTile].showOff();
+	        
+
+
+	         
+	        
+	         if (character.map.tileMatrix[xTile][yTile] ===  character.currentTile){
+	         	console.log("igual");
+
+	         }else{
+	         
+	         	if (character.map.tileMatrix[xTile][yTile].getCharacter() != 0){
+	         		var swapedCharacter = character.map.tileMatrix[xTile][yTile].getCharacter();
+ 					console.log("NO igual",swapedCharacter);
+
+	         		swapedCharacter.currentTile = swapedCharacter.map.getInTile(character.currentTile.x,character.currentTile.y,swapedCharacter);
+	         		swapedCharacter.setPosition(character.currentTile.x,character.currentTile.y);
+	         		swapedCharacter.showWeapon();
+	         		character.currentTile = character.map.getInTile(xTile,yTile,character);
+	         		//character.setPosition(xTile,yTile);
+	         		character.showWeapon();
+
+	         	}else{
+	         		console.log("NO igual");
+
+	   	         	character.currentTile.removeCharacter();
+	   	         	//character.setPosition(xTile,yTile);
+	   	         	character.currentTile = character.map.getInTile(xTile,yTile,character);
+	         	}
+
+	         }
 	        },
 	        onDragEnd:function(){
 	         var xTile = Math.round((this.x-77)/45);
 	         var yTile =  Math.round((this.y-77-((xTile%2)*25))/50);
-	         TweenMax.to(character.htmlDiv,2,{x:xTile*45+77,y:yTile*50+(xTile%2)*25+77,ease:Expo.easeOut}); 	
-	         character.weapon.setArea(xTile,yTile);
-	        	character.weapon.putArea("Effects");	
+	            character.setPosition(xTile,yTile);
+	          	character.showWeapon();	
 	        },
 	        onPress:function(){
-	        	 var xTile = Math.round((this.x-77)/45);
-	         	var yTile =  Math.round((this.y-77-((xTile%2)*25))/50);
-	        	character.weapon.setArea(xTile,yTile);
-	        	character.weapon.putArea("Effects");
+	        	character.showWeapon();
+	        	
+	        	
 	        }
 
 
 
 		});
 	}
-
-
-
 }
+
+
 BB.ActorsHandler = function(numCharacters,map){
 
 	var actorsHandler = this;
@@ -140,15 +186,22 @@ BB.ActorsHandler = function(numCharacters,map){
 	this.leftOffset = 100;
 	this.charactersArray= new Array(numCharacters);
 	for (var j = 0; j<numCharacters;j++){
-		actorsHandler.charactersArray[j] = new BB.Character(0,map);
-		actorsHandler.charactersArray[j].setPosition(Math.floor(Math.random()*15),Math.floor(Math.random()*15));
-		actorsHandler.charactersArray[j].setDragable();
-		actorsHandler.targetDiv.append(actorsHandler.charactersArray[j].getCharacter());
+		var xTile = Math.floor(Math.random()*15);
+		var yTile = Math.floor(Math.random()*15);
+		if (map.getCharacterInTile(xTile,yTile) === 0){
+			actorsHandler.charactersArray[j] = new BB.Character(0,map);
+			actorsHandler.charactersArray[j].setPosition(xTile,yTile);
+			//map.getInTile(xTile,yTile, actorsHandler.charactersArray[j]);
+			actorsHandler.charactersArray[j].setDragable();
+			actorsHandler.targetDiv.append(actorsHandler.charactersArray[j].getCharacter());
+		}
 	}
-	 
-
-
 }
+
+
+
+
+
 BB.DangerZone = function(x,y,kind){
 	var dangerZone = this;
 	this.x = x;
@@ -165,6 +218,7 @@ BB.DangerZone = function(x,y,kind){
 		default:
 		break;
 	}
+
 	this.setPosition = function(centerX,centerY){
 		var xTile = dangerZone.x+centerX;
 		var yTile = dangerZone.y+centerY+(centerX)%2*(Math.abs(xTile+1))%2;
@@ -175,6 +229,8 @@ BB.DangerZone = function(x,y,kind){
 		return dangerZone.icon;
 	}
 }
+
+
 
 BB.Weapon = function(kind){
 
